@@ -21,7 +21,7 @@ const swaggerOptions = {
     servers: [{ url: "http://localhost:3000" }],
   },
 
-  apis: ["./src/routes/*.ts", "./src/routes/*.js"],
+  apis: ["./src/routes/*.ts", "./src/controllers/*.ts"],
 };
 
 const specs = swaggerJsdoc(swaggerOptions);
@@ -29,13 +29,12 @@ const specs = swaggerJsdoc(swaggerOptions);
 app.use(express.json());
 
 app.use("/", defaultRoute);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+app.use("/api", swaggerUi.serve, swaggerUi.setup(specs));
 app.use("/analysis", analysisRoutes);
 app.use("/workflow", workflowRoute);
 
 AppDataSource.initialize()
   .then(() => {
-    // Start the worker after successful DB connection
     taskWorker();
 
     app.listen(3000, () => {

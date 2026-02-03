@@ -1,13 +1,7 @@
 import { PolygonAreaJob } from "./PolygonAreaJob";
 import { Task } from "../models/Task";
-import { area } from "@turf/area";
-import { sleep } from "../utils/sleep";
-
-// Mock dependencies
-jest.mock("@turf/area");
-jest.mock("../utils/sleep", () => ({
-  sleep: jest.fn()
-}));
+import * as turfArea from "@turf/area"; // Import as a module object
+import * as sleepModule from "../utils/sleep";
 
 describe("PolygonAreaJob", () => {
   let job: PolygonAreaJob;
@@ -15,9 +9,7 @@ describe("PolygonAreaJob", () => {
 
   beforeEach(() => {
     job = new PolygonAreaJob();
-    
-    // Create a mock object that satisfies the Task type 
-    // by casting a Partial to Task
+
     mockTask = {
       taskId: "test-id",
       geoJson: JSON.stringify({
@@ -27,44 +19,46 @@ describe("PolygonAreaJob", () => {
       output: ""
     } as Task;
 
+    // Spy on sleep
+    jest.spyOn(sleepModule, "sleep").mockResolvedValue(undefined);
+    
     jest.clearAllMocks();
-    (sleep as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it("should calculate area correctly and assign it as a string to output", async () => {
     const expectedArea = 100.5;
-    // Cast the mock return value to ensure type safety
-    (area as jest.Mock).mockReturnValue(expectedArea);
+    
+    // Fix: Spy on the 'area' property of the turfArea module
+    const areaSpy = jest.spyOn(turfArea, "area").mockReturnValue(expectedArea);
 
     await job.run(mockTask);
 
-    expect(sleep).toHaveBeenCalled();
-    expect(area).toHaveBeenCalledWith(expect.objectContaining({
+    expect(sleepModule.sleep).toHaveBeenCalled();
+    expect(areaSpy).toHaveBeenCalledWith(expect.objectContaining({
       type: "Polygon"
     }));
     expect(mockTask.output).toBe("100.5");
   });
 
   it("should throw an error when geoJson is missing", async () => {
-
     mockTask.geoJson = undefined as unknown as string;
 
-    const runPromise = job.run(mockTask);
-
-    await expect(runPromise).rejects.toThrow("Missing geoJson data for area calculation.");
+    await expect(job.run(mockTask)).rejects.toThrow("Missing geoJson data for area calculation.");
   });
 
   it("should handle JSON parsing errors", async () => {
     mockTask.geoJson = "{ invalid json }";
 
-    const runPromise = job.run(mockTask);
-
-    await expect(runPromise).rejects.toThrow(SyntaxError);
+    await expect(job.run(mockTask)).rejects.toThrow(SyntaxError);
   });
 
   it("should handle valid empty polygons by returning zero area", async () => {
-    (area as jest.Mock).mockReturnValue(0);
-    
+    jest.spyOn(turfArea, "area").mockReturnValue(0);
+
     await job.run(mockTask);
 
     expect(mockTask.output).toBe("0");

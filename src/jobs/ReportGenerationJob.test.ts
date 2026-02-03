@@ -1,11 +1,11 @@
 import { ReportGenerationJob } from "./ReportGenerationJob";
-import { Task } from "../models/Task";
-import { TaskStatus } from "../workers/taskRunner";
-import * as sleep from "../utils/sleep";
+import { Task, TaskStatus } from "../models/Task";
+import * as sleepModule from "../utils/sleep";
 
 describe("ReportGenerationJob", () => {
   let job: ReportGenerationJob;
   let mockTask: Task;
+  let sleepSpy: jest.SpiedFunction<typeof sleepModule.sleep>;
 
   beforeEach(() => {
     job = new ReportGenerationJob();
@@ -34,14 +34,20 @@ describe("ReportGenerationJob", () => {
       }
     } as Task;
 
+    sleepSpy = jest.spyOn(sleepModule, "sleep").mockResolvedValue(undefined);
     jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    // Always clear or restore spies to avoid memory leaks/interference
+    sleepSpy.mockRestore();
   });
 
   it("should successfully aggregate tasks and set status to Completed", async () => {
     await job.run(mockTask);
 
     // Verify sleep was called
-    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleepSpy).toHaveBeenCalledTimes(1);
 
     // Verify status update
     expect(mockTask.status).toBe(TaskStatus.Completed);
@@ -60,7 +66,7 @@ describe("ReportGenerationJob", () => {
       taskId: "err-1",
       workflow: undefined
     } as unknown as Task;
-    const sleepSpy = jest.spyOn(sleep, "sleep").mockResolvedValue(undefined);
+
     await expect(job.run(brokenTask)).rejects.toThrow(
       "Workflow data or related tasks are missing for report generation."
     );

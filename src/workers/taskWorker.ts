@@ -4,6 +4,8 @@ import { Task } from "../models/Task";
 import { TaskRunner } from "./taskRunner";
 import { TaskStatus } from "./TaskStatus";
 import { sleep } from "../utils/sleep";
+import { Workflow } from "../models/Workflow";
+import { Result } from "../models/Result";
 
 /**
  * Looks at a window of queued tasks and processes the first one that is ready.
@@ -77,7 +79,9 @@ export async function processTasksWindow(
 
 export async function taskWorker() {
   const taskRepository = AppDataSource.getRepository(Task);
-  const taskRunner = new TaskRunner(taskRepository);
+  const workFlowRepository = AppDataSource.getRepository(Workflow);
+  const resultRepository = AppDataSource.getRepository(Result);
+  const taskRunner = new TaskRunner(taskRepository, workFlowRepository, resultRepository);
 
   while (true) {
     try {

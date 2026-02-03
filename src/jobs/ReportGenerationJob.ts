@@ -1,6 +1,5 @@
-import { Task } from "../models/Task";
+import { Task, TaskStatus } from "../models/Task";
 import { sleep } from "../utils/sleep";
-import { TaskStatus } from "../workers/taskRunner";
 import { Job } from "./Job";
 
 export class ReportGenerationJob implements Job {

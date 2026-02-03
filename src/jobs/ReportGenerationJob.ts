@@ -37,5 +37,8 @@ export class ReportGenerationJob implements Job {
 
     task.output = JSON.stringify(report);
     task.status = TaskStatus.Completed;
+     console.log(
+      `ReportGenerationJob is finished.`,
+    );
   }
 }

@@ -14,7 +14,6 @@ describe("TaskRunner", () => {
   let workflowRepo: jest.Mocked<Repository<Workflow>>;
   let resultRepo: jest.Mocked<Repository<Result>>;
   
-  // Audit log to capture primitive values (avoids the reference trap)
   let statusHistory: string[] = [];
 
   beforeEach(() => {
@@ -54,7 +53,6 @@ describe("TaskRunner", () => {
     task.taskType = "test-type";
     task.workflow = { workflowId: "wf-1" } as Workflow;
 
-    // 2. FIX: Use spyOn. This replaces the function with a mock that HAS .mockReturnValue
     const mockJob = { run: jest.fn().mockResolvedValue(undefined) };
     const jobSpy = jest.spyOn(JobFactory, "getJobForTaskType").mockReturnValue(mockJob as Job);
 
@@ -65,7 +63,6 @@ describe("TaskRunner", () => {
 
     await runner.run(task);
 
-    // 3. ASSERT against the primitive history log (This solves the Reference Trap)
     expect(statusHistory[0]).toBe(TaskStatus.InProgress);
     expect(statusHistory).toContain(TaskStatus.Completed);
     
